@@ -1,3 +1,4 @@
 {
-  "api_secret_key" : "secret"
+  "api_secret_key" : "secret",
+  "points_data_file" : "data/points.json"
 }

@@ -10,6 +10,5 @@ CREATE TABLE cartesian.point
 (
     x        INT NOT NULL,
     y        INT NOT NULL,
-    distance INT NOT NULL,
 );
 `

@@ -2,11 +2,15 @@ package points
 
 import (
 	"errors"
-	"fmt"
-	"os"
+
+	"github.com/geanbertani/cartesian-api/libs/env"
+	"github.com/geanbertani/cartesian-api/libs/json"
+	"github.com/geanbertani/cartesian-api/settings"
+	"github.com/geanbertani/cartesian-api/settings/postgres"
+	"github.com/jmoiron/sqlx"
 )
 
-func GetPointsByDistance(filter Filter) (points []PointsDistance, err error) {
+func GetPointsByDistance(filter Filter) (points []Point, err error) {
 	point := Point{
 		X: filter.X,
 		Y: filter.Y,
@@ -28,20 +32,35 @@ func GetPointsByDistance(filter Filter) (points []PointsDistance, err error) {
 	return
 }
 
-func getPointsByDistance(point Point, distance int) (points []PointsDistance, err error) {
+func getPointsByDistance(point Point, distance int) (points []Point, err error) {
+	tx := postgres.MustGetByFile(settings.POSTGRES_FILE).MustBegin()
+	defer tx.Rollback()
 
-	return
-}
-
-func loadPoints() (err error) {
-	filepath := "data/points.json"
-
-	file, err := os.Open(filepath)
+	points, err = loadPoints()
 	if err != nil {
 		return
 	}
 
-	fmt.Printf("debug: \n %v \n\n", file)
+	err = AddPointsTx(points, tx)
+	if err != nil {
+		tx.Rollback()
+		return
+	}
+
+	err = tx.Commit()
+	return
+}
+
+func AddPointsTx(points []Point, tx *sqlx.Tx) (err error) {
+	return addPointsTx(points, tx)
+}
+
+func loadPoints() (points []Point, err error) {
+	env.MustSetByJSONFile(settings.ENVIRONMENT_FILE)
+
+	filePoints := env.MustString("points_data_file")
+
+	err = json.UnmarshalFile(filePoints, &points)
 
 	return
 }
